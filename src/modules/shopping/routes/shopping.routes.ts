@@ -1,9 +1,12 @@
 import { Router } from "express";
-import { getShoppings } from "../controllers/shopping.controller.js";
+import { getProducts, getShoppings, getSupplier } from "../controllers/shopping.controller.js";
 
 const router = Router();
 
 router.get("/", getShoppings);
+router.get("/suppliers", getSupplier);
+router.get("/products", getProducts);
+
 router.get("/:idShopping", getShoppings);
 // router.post("/");
 // router.put("/:idShopping");
