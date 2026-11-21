@@ -8,6 +8,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { NODE_ENV, CORS_ORIGINS } from "./config/env.js";
 import rootRouter from "./routes/index.routes.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 
@@ -45,7 +46,10 @@ app.get("/", (req, res) => {
 app.use("/api", rootRouter);
 
 app.use((req, res) => {
-    res.status(404).json({ message: "Ruta no encontrada" });
+    res.status(404).json({ message: "Ruta no encontrada o movida." });
 });
+
+// MiddlewareGlobal para errores
+app.use(errorHandler);
 
 export default app;

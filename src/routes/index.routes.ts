@@ -1,6 +1,7 @@
 import { Router } from "express";
 import shoppingRoutes from "../modules/shopping/routes/shopping.routes.js";
 import suppliersCategoriesRoutes from "../modules/suppliersCategory/routes/suppliersCategory.routes.js";
+import returnsRoutes from "../modules/returns/routes/salesReturns.routes.js";
 
 const router = Router();
 
@@ -27,7 +28,7 @@ router.use("/shoppings", shoppingRoutes);
 // router.use("/clients", clientsRoutes);
 // router.use("/orders", ordersRoutes);
 // router.use("/sales", salesRoutes);
-// router.use("/returns", returnsRoutes);
+router.use("/returns", returnsRoutes);
 
 // ── Configuración / Usuarios y Roles ──
 // router.use("/users", usersRoutes);

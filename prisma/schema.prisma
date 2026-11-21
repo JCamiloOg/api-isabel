@@ -90,7 +90,7 @@ model User {
   address          String?  @db.VarChar(255)
   password         String?  @db.VarChar(200)
   roleId           Int?     @map("role_id")
-  status           String   @default("Active") @db.VarChar(20)
+  status           Boolean  @default(true)
   createdAt        DateTime @default(now()) @map("created_at")
 
   documentType    DocumentType @relation(fields: [documentTypeId], references: [id])
@@ -284,7 +284,7 @@ model Purchase {
   cashRegisterId Int       @map("cash_register_id")
   supplierId     String    @map("supplier_id") @db.VarChar(20)
   orderDate      DateTime  @default(now()) @map("order_date")
-  status         String    @default("Pending") @db.VarChar(20)
+  status         String    @default("Pendiente") @db.VarChar(20)
   deliveryDate   DateTime? @map("delivery_date")
   vat            Decimal   @default(0.00) @db.Decimal(5, 2)
 
@@ -324,7 +324,7 @@ model Sale {
   isCredit     Boolean  @map("is_credit")
   isDirectSale Boolean? @map("is_direct_sale")
   vat          Decimal  @default(0.00) @db.Decimal(5, 2)
-  status       String   @default("Completed") @db.VarChar(20)
+  status       String   @default("Pendiente") @db.VarChar(20)
 
   customer    User         @relation("CustomerSales", fields: [customerId], references: [identityDocument])
   seller      User         @relation("SellerSales", fields: [userId], references: [identityDocument])
@@ -387,7 +387,7 @@ model SaleReturn {
   userId          String    @map("user_id") @db.VarChar(20)
   quantity        Int
   reason          String    @db.VarChar(100)
-  status          String    @default("Pending Review") @db.VarChar(30)
+  status          String    @default("Pendiente") @db.VarChar(30)
   rejectionReason String?   @map("rejection_reason") @db.VarChar(255)
   requestDate     DateTime  @default(now()) @map("request_date")
   resolutionDate  DateTime? @map("resolution_date")
