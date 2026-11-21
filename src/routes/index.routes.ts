@@ -1,5 +1,6 @@
 import { Router } from "express";
 import shoppingRoutes from "../modules/shopping/routes/shopping.routes.js";
+import suppliersCategoriesRoutes from "../modules/suppliersCategory/routes/suppliersCategory.routes.js";
 
 const router = Router();
 
@@ -18,7 +19,7 @@ const router = Router();
 // router.use("/products/categories", productCategoriesRoutes);
 // router.use("/products/brands", productBrandsRoutes);
 // router.use("/products/types", productTypesRoutes);
-// router.use("/category-supplier", categorySupplierRoutes);
+router.use("/category-supplier", suppliersCategoriesRoutes);
 // router.use("/supplier", supplierRoutes);
 router.use("/shoppings", shoppingRoutes);
 
