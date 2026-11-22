@@ -161,6 +161,14 @@ export const createShopping: RequestHandler<
             message: "Campos por llenar"
         });
 
+        const existShoppingId = await prisma.purchase.findUnique({
+            where: { id: purchaseInfo.id },
+        });
+
+        if (existShoppingId) return res.status(400).json({
+            message: "El # de la factura ya existe. Ingresa otro o modifica la compra existente."
+        });
+
         await prisma.$transaction(async (tx) => {
             const insertedPurchase = await tx.purchase.create({
                 data: {
