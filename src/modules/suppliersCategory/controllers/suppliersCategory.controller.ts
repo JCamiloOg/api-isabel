@@ -11,29 +11,29 @@ type GetSupplierCategory = Prisma.SupplierCategoryGetPayload<{
 }>;
 
 // Obtener categorías con sus proveedores
-type GetSupplierCategoryWithSuppliers =
-    Prisma.SupplierCategoryGetPayload<{
-        select: {
-            id: true,
-            name: true,
-            description: true,
-            suppliers: {
-                select: {
-                    supplier: {
-                        select: {
-                            document: true,
-                            businessName: true,
-                            email: true,
-                            phone: true,
-                            status: true
-                        }
-                    }
-                }
-            }
-        }
-    }>;
+// type GetSupplierCategoryWithSuppliers =
+//     Prisma.SupplierCategoryGetPayload<{
+//         select: {
+//             id: true,
+//             name: true,
+//             description: true,
+//             suppliers: {
+//                 select: {
+//                     supplier: {
+//                         select: {
+//                             document: true,
+//                             businessName: true,
+//                             email: true,
+//                             phone: true,
+//                             status: true
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }>;
 
-    type CreateSupplierCategoryDTO = {
+type CreateSupplierCategoryDTO = {
     name: string;
     description: string;
 };
@@ -43,7 +43,7 @@ type UpdateSupplierCategoryDTO = Partial<CreateSupplierCategoryDTO>;
 
 
 export const createSupplierCategory: RequestHandler<
-    {},
+    unknown,
     { message: string; suppliersCategory?: GetSupplierCategory },
     CreateSupplierCategoryDTO
 > = async (req, res, next) => {
@@ -139,7 +139,7 @@ export const getSuppliersCategory: RequestHandler<
                 });
             }
 
- const suppliersCategory = await prisma.supplierCategory.findUnique({
+            const suppliersCategory = await prisma.supplierCategory.findUnique({
                 where: { id },
                 select: {
                     id: true,
@@ -166,7 +166,7 @@ export const getSuppliersCategory: RequestHandler<
             return res.status(200).json({ message: "Categoria obtenida exitosamente", suppliersCategory: suppliersCategory });
         }
 
-const suppliersCategory = await prisma.supplierCategory.findMany({
+        const suppliersCategory = await prisma.supplierCategory.findMany({
             select: {
                 id: true,
                 name: true,
