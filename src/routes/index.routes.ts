@@ -3,6 +3,10 @@ import shoppingRoutes from "../modules/shopping/routes/shopping.routes.js";
 import suppliersCategoriesRoutes from "../modules/suppliersCategory/routes/suppliersCategory.routes.js";
 import returnsRoutes from "../modules/returns/routes/salesReturns.routes.js";
 import ordersRoutes from "../modules/orders/routes/orders.routes.js";
+import usersRoutes from "../modules/users/routes/users.routes.js"
+import rolesRoutes from "../modules/roles/routes/roles.routes.js"
+import permissionsRoutes from "../modules/permissions/routes/permissions.routes.js"
+import salesRoutes from "../modules/sales/routes/sales.routes.js"
 
 const router = Router();
 
@@ -28,13 +32,13 @@ router.use("/shoppings", shoppingRoutes);
 // ── Gestión de ventas ──
 // router.use("/clients", clientsRoutes);
 router.use("/orders", ordersRoutes);
-// router.use("/sales", salesRoutes);
+router.use("/sales", salesRoutes);
 router.use("/returns", returnsRoutes);
 
 // ── Configuración / Usuarios y Roles ──
-// router.use("/users", usersRoutes);
-// router.use("/roles", rolesRoutes);
-// router.use("/permissions", permissionsRoutes);
+router.use("/users", usersRoutes);
+router.use("/roles", rolesRoutes);
+router.use("/permissions", permissionsRoutes);
 
 // ── Landing / Clientes ──
 // router.use("/catalog", catalogRoutes);
