@@ -3,6 +3,7 @@ import shoppingRoutes from "../modules/shopping/routes/shopping.routes.js";
 import suppliersCategoriesRoutes from "../modules/suppliersCategory/routes/suppliersCategory.routes.js";
 import returnsRoutes from "../modules/returns/routes/salesReturns.routes.js";
 import ordersRoutes from "../modules/orders/routes/orders.routes.js";
+import dashboardRoutes from "../modules/dashboard/routes/dashboard.routes.js";
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const router = Router();
 // router.use("/auth", authRoutes);
 
 // ── Dashboard / Principal ──
-// router.use("/dashboard", dashboardRoutes);
+router.use("/dashboard", dashboardRoutes);
 // router.use("/bills", billsRoutes);
 // router.use("/boxes", boxesRoutes);
 
