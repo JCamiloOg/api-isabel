@@ -152,7 +152,8 @@ model Product {
   salePrice         Decimal @map("sale_price") @db.Decimal(12, 2)
   isPublic          Boolean @default(true) @map("is_public")
   gender            String  @db.VarChar(10)
-  status            String  @default("Active") @db.VarChar(20)
+  status            Boolean @default(true)
+  image             String? @db.VarChar(255)
 
   productCategory ProductCategory @relation(fields: [productCategoryId], references: [id])
   brand           Brand           @relation(fields: [brandId], references: [id])
@@ -175,11 +176,10 @@ model Color {
 
 /// Combinación de un producto con un color específico y su imagen principal
 model ProductColor {
-  id        Int     @id @default(autoincrement())
-  productId Int     @map("product_id")
-  colorId   Int     @map("color_id")
-  image     String? @db.VarChar(255)
-  status    String  @default("Active") @db.VarChar(20)
+  id        Int    @id @default(autoincrement())
+  productId Int    @map("product_id")
+  colorId   Int    @map("color_id")
+  status    String @default("Active") @db.VarChar(20)
 
   product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   color           Color            @relation(fields: [colorId], references: [id])
@@ -279,14 +279,20 @@ model SupplierCategoryAssignment {
 }
 
 /// Encabezado de órdenes de compra a proveedores (ID en formato UUID)
+enum PurchasesStatus {
+  Pendiente
+  Cancelada
+  Recibida
+}
+
 model Purchase {
-  id             String    @id @default(uuid()) @db.Uuid
-  cashRegisterId Int       @map("cash_register_id")
-  supplierId     String    @map("supplier_id") @db.VarChar(20)
-  orderDate      DateTime  @default(now()) @map("order_date")
-  status         String    @default("Pendiente") @db.VarChar(20)
-  deliveryDate   DateTime? @map("delivery_date")
-  vat            Decimal   @default(0.00) @db.Decimal(5, 2)
+  id             String          @id @default(uuid()) @db.Uuid
+  cashRegisterId Int             @map("cash_register_id")
+  supplierId     String          @map("supplier_id") @db.VarChar(20)
+  orderDate      DateTime        @default(now()) @map("order_date")
+  status         PurchasesStatus @default(Pendiente)
+  deliveryDate   DateTime?       @map("delivery_date")
+  vat            Decimal         @default(0.00) @db.Decimal(5, 2)
 
   cashRegister    CashRegister     @relation(fields: [cashRegisterId], references: [id])
   supplier        Supplier         @relation(fields: [supplierId], references: [document])
@@ -315,16 +321,24 @@ model PurchaseDetail {
 // ============================================================================
 
 /// Encabezado de ventas y pedidos de clientes (ID en formato UUID)
+enum SaleStatus {
+  Pendiente
+  En_Preparacion @map("En Preparación")
+  En_Camino      @map("En Camino")
+  Entregada
+  Cancelada
+}
+
 model Sale {
-  id           String   @id @default(uuid()) @db.Uuid
-  customerId   String   @map("customer_id") @db.VarChar(20)
-  userId       String   @map("user_id") @db.VarChar(20)
-  saleDate     DateTime @default(now()) @map("sale_date")
-  discount     Decimal  @default(0.00) @db.Decimal(5, 2)
-  isCredit     Boolean  @map("is_credit")
-  isDirectSale Boolean? @map("is_direct_sale")
-  vat          Decimal  @default(0.00) @db.Decimal(5, 2)
-  status       String   @default("Pendiente") @db.VarChar(20)
+  id           String     @id @default(uuid()) @db.Uuid
+  customerId   String     @map("customer_id") @db.VarChar(20)
+  userId       String     @map("user_id") @db.VarChar(20)
+  saleDate     DateTime   @default(now()) @map("sale_date")
+  discount     Decimal    @default(0.00) @db.Decimal(5, 2)
+  isCredit     Boolean    @map("is_credit")
+  isDirectSale Boolean?   @map("is_direct_sale")
+  vat          Decimal    @default(0.00) @db.Decimal(5, 2)
+  status       SaleStatus @default(Pendiente)
 
   customer    User         @relation("CustomerSales", fields: [customerId], references: [identityDocument])
   seller      User         @relation("SellerSales", fields: [userId], references: [identityDocument])
@@ -380,17 +394,39 @@ model Payment {
 }
 
 /// Solicitudes y resoluciones de devolución de mercancía vendida (ID en formato UUID)
+enum TypeResolution {
+  Cambiar_mismo_producto  @map("Cambiar por el mismo producto")
+  Devolver_dinero         @map("Devolver dinero")
+  Cambiar_otra_referencia @map("Cambiar por otra referencia")
+}
+
+enum ReasonsReturn {
+  Talla_equivocada        @map("Talla equivocada")
+  Color_equivocado        @map("Color equivocado")
+  Producto_dañado        @map("Producto dañado")
+  Producto_defectuoso     @map("Producto defectuoso")
+  Producto_no_corresponde @map("Producto no corresponde")
+}
+
+enum SaleReturnStatus {
+  Pendiente
+  Aprobada
+  Rechazada
+}
+
 model SaleReturn {
-  id              String    @id @default(uuid()) @db.Uuid
-  saleId          String    @map("sale_id") @db.Uuid
-  variantId       Int       @map("variant_id")
-  userId          String    @map("user_id") @db.VarChar(20)
+  id              String         @id @default(uuid()) @db.Uuid
+  saleId          String         @map("sale_id") @db.Uuid
+  variantId       Int            @map("variant_id")
+  userId          String         @map("user_id") @db.VarChar(20)
   quantity        Int
-  reason          String    @db.VarChar(100)
-  status          String    @default("Pendiente") @db.VarChar(30)
-  rejectionReason String?   @map("rejection_reason") @db.VarChar(255)
-  requestDate     DateTime  @default(now()) @map("request_date")
-  resolutionDate  DateTime? @map("resolution_date")
+  reason          ReasonsReturn  @default(Talla_equivocada)
+  details         String?        @db.VarChar(255)
+  typeResolution  TypeResolution @default(Cambiar_mismo_producto) @map("type_resolution")
+  status          String         @default("Pendiente") @db.VarChar(30)
+  rejectionReason String?        @map("rejection_reason") @db.VarChar(255)
+  requestDate     DateTime       @default(now()) @map("request_date")
+  resolutionDate  DateTime?      @map("resolution_date")
 
   sale    Sale           @relation(fields: [saleId], references: [id])
   variant ProductVariant @relation(fields: [variantId], references: [id])
