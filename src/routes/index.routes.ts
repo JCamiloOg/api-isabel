@@ -16,6 +16,9 @@ import permissionsRoutes from "../modules/permissions/routes/permissions.routes.
 import salesRoutes from "../modules/sales/routes/sales.routes.js"
 import dashboardRoutes from "../modules/dashboard/routes/dashboard.routes.js";
 
+import boxesRoutes from "../modules/boxes/routers/boxes.routes.js";
+import expensesRoutes from "../modules/expenses/routers/expenses.routes.js";
+import supplierRoutes from "../modules/suppliers/routers/supplier.routes.js";
 const router = Router();
 
 // ── Auth ──
@@ -23,8 +26,8 @@ const router = Router();
 
 // ── Dashboard / Principal ──
 router.use("/dashboard", dashboardRoutes);
-// router.use("/bills", billsRoutes);
-// router.use("/boxes", boxesRoutes);
+router.use("/expenses", expensesRoutes);
+router.use("/boxes", boxesRoutes);
 
 // ── Gestión de compras / Productos ──
 router.use("/products", productsRoutes);
@@ -34,7 +37,7 @@ router.use("/products/categories", productCategoriesRoutes);
 router.use("/products/brands", productBrandsRoutes);
 router.use("/products/types", productTypesRoutes);
 router.use("/category-supplier", suppliersCategoriesRoutes);
-// router.use("/supplier", supplierRoutes);
+router.use("/supplier", supplierRoutes);
 router.use("/shoppings", shoppingRoutes);
 
 // ── Gestión de ventas ──
