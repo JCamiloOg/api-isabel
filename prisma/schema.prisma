@@ -415,18 +415,18 @@ enum SaleReturnStatus {
 }
 
 model SaleReturn {
-  id              String         @id @default(uuid()) @db.Uuid
-  saleId          String         @map("sale_id") @db.Uuid
-  variantId       Int            @map("variant_id")
-  userId          String         @map("user_id") @db.VarChar(20)
+  id              String           @id @default(uuid()) @db.Uuid
+  saleId          String           @map("sale_id") @db.Uuid
+  variantId       Int              @map("variant_id")
+  userId          String           @map("user_id") @db.VarChar(20)
   quantity        Int
-  reason          ReasonsReturn  @default(Talla_equivocada)
-  details         String?        @db.VarChar(255)
-  typeResolution  TypeResolution @default(Cambiar_mismo_producto) @map("type_resolution")
-  status          String         @default("Pendiente") @db.VarChar(30)
-  rejectionReason String?        @map("rejection_reason") @db.VarChar(255)
-  requestDate     DateTime       @default(now()) @map("request_date")
-  resolutionDate  DateTime?      @map("resolution_date")
+  reason          ReasonsReturn    @default(Talla_equivocada)
+  details         String?          @db.VarChar(255)
+  typeResolution  TypeResolution   @default(Cambiar_mismo_producto) @map("type_resolution")
+  status          SaleReturnStatus @default(Pendiente)
+  rejectionReason String?          @map("rejection_reason") @db.VarChar(255)
+  requestDate     DateTime         @default(now()) @map("request_date")
+  resolutionDate  DateTime?        @map("resolution_date")
 
   sale    Sale           @relation(fields: [saleId], references: [id])
   variant ProductVariant @relation(fields: [variantId], references: [id])
