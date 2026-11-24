@@ -93,13 +93,14 @@ model User {
   status           Boolean  @default(true)
   createdAt        DateTime @default(now()) @map("created_at")
 
-  documentType    DocumentType @relation(fields: [documentTypeId], references: [id])
-  role            Role?        @relation(fields: [roleId], references: [id])
-  salesAsCustomer Sale[]       @relation("CustomerSales")
-  salesAsSeller   Sale[]       @relation("SellerSales")
-  payments        Payment[]
-  saleReturns     SaleReturn[]
-  expenses        Expense[]
+  documentType     DocumentType      @relation(fields: [documentTypeId], references: [id])
+  role             Role?             @relation(fields: [roleId], references: [id])
+  salesAsCustomer  Sale[]            @relation("CustomerSales")
+  salesAsSeller    Sale[]            @relation("SellerSales")
+  payments         Payment[]
+  saleReturns      SaleReturn[]
+  expenses         Expense[]
+  purchasePayments PurchasePayment[]
 
   @@map("users")
 }
@@ -121,9 +122,9 @@ model ProductCategory {
 
 /// Marcas comerciales de calzado
 model Brand {
-  id     Int    @id @default(autoincrement())
-  name   String @unique @db.VarChar(80)
-  status String @default("Active") @db.VarChar(20)
+  id     Int     @id @default(autoincrement())
+  name   String  @unique @db.VarChar(80)
+  status Boolean @default(true)
 
   products Product[]
 
@@ -222,11 +223,12 @@ model ProductVariant {
   discount       Decimal? @default(0.00) @db.Decimal(5, 2)
   status         String   @default("Active") @db.VarChar(20)
 
-  productColor    ProductColor     @relation(fields: [productColorId], references: [id], onDelete: Cascade)
-  size            Size             @relation(fields: [sizeId], references: [id])
-  purchaseDetails PurchaseDetail[]
-  saleDetails     SaleDetail[]
-  saleReturns     SaleReturn[]
+  productColor        ProductColor         @relation(fields: [productColorId], references: [id], onDelete: Cascade)
+  size                Size                 @relation(fields: [sizeId], references: [id])
+  purchaseDetails     PurchaseDetail[]
+  saleDetails         SaleDetail[]
+  saleReturns         SaleReturn[]
+  saleReturnExchanges SaleReturnExchange[]
 
   @@unique([productColorId, sizeId])
   @@map("product_variants")
@@ -294,9 +296,10 @@ model Purchase {
   deliveryDate   DateTime?       @map("delivery_date")
   vat            Decimal         @default(0.00) @db.Decimal(5, 2)
 
-  cashRegister    CashRegister     @relation(fields: [cashRegisterId], references: [id])
-  supplier        Supplier         @relation(fields: [supplierId], references: [document])
-  purchaseDetails PurchaseDetail[]
+  supplier         Supplier          @relation(fields: [supplierId], references: [document])
+  purchaseDetails  PurchaseDetail[]
+  purchasePayments PurchasePayment[]
+  cashRegister     CashRegister      @relation(fields: [cashRegisterId], references: [id])
 
   @@map("purchases")
 }
@@ -314,6 +317,26 @@ model PurchaseDetail {
 
   @@unique([purchaseId, variantId])
   @@map("purchase_details")
+}
+
+/// Pagos o abonos realizados a proveedores desde una o varias cajas
+model PurchasePayment {
+  id              Int      @id @default(autoincrement())
+  purchaseId      String   @map("purchase_id") @db.Uuid
+  cashRegisterId  Int      @map("cash_register_id")
+  userId          String   @map("user_id") @db.VarChar(20)
+  paymentMethodId Int      @map("payment_method_id")
+  amount          Decimal  @db.Decimal(14, 2)
+  receipt         String?  @db.VarChar(255)
+  paymentDate     DateTime @default(now()) @map("payment_date")
+  notes           String?  @db.VarChar(255)
+
+  purchase      Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  cashRegister  CashRegister  @relation(fields: [cashRegisterId], references: [id])
+  user          User          @relation(fields: [userId], references: [identityDocument])
+  paymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  @@map("purchase_payments")
 }
 
 // ============================================================================
@@ -368,27 +391,36 @@ model PaymentMethod {
   id     Int    @id @default(autoincrement())
   method String @db.VarChar(20)
 
-  payments Payment[]
+  payments         Payment[]
+  purchasePayments PurchasePayment[]
 
   @@map("payment_methods")
 }
 
+enum typePayment {
+  Egreso  @map("Egreso")
+  Ingreso @map("Ingreso")
+}
+
 /// Abonos y pagos recibidos asociados a una venta (contado o crédito)
 model Payment {
-  id              Int      @id @default(autoincrement())
-  saleId          String   @map("sale_id") @db.Uuid
-  cashRegisterId  Int      @map("cash_register_id")
-  userId          String   @map("user_id") @db.VarChar(20)
-  paymentMethodId Int      @map("payment_method_id")
-  amount          Decimal  @db.Decimal(14, 2)
-  receipt         String?  @db.VarChar(255)
-  paymentDate     DateTime @default(now()) @map("payment_date")
-  notes           String?  @db.VarChar(255)
+  id              Int         @id @default(autoincrement())
+  saleId          String      @map("sale_id") @db.Uuid
+  cashRegisterId  Int         @map("cash_register_id")
+  userId          String      @map("user_id") @db.VarChar(20)
+  paymentMethodId Int         @map("payment_method_id")
+  amount          Decimal     @db.Decimal(14, 2)
+  receipt         String?     @db.VarChar(255)
+  paymentDate     DateTime    @default(now()) @map("payment_date")
+  notes           String?     @db.VarChar(255)
+  type            typePayment @default(Ingreso)
+  saleReturnId    String?     @map("sale_return_id") @db.Uuid
 
   sale          Sale          @relation(fields: [saleId], references: [id], onDelete: Cascade)
   cashRegister  CashRegister  @relation(fields: [cashRegisterId], references: [id])
   user          User          @relation(fields: [userId], references: [identityDocument])
   paymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  saleReturn    SaleReturn?   @relation(fields: [saleReturnId], references: [id])
 
   @@map("payments")
 }
@@ -422,17 +454,35 @@ model SaleReturn {
   quantity        Int
   reason          ReasonsReturn    @default(Talla_equivocada)
   details         String?          @db.VarChar(255)
+  refundAmount    Decimal          @default(0.00) @map("refund_amount") @db.Decimal(14, 2)
+  returnToStock   Boolean          @default(true) @map("return_to_stock")
   typeResolution  TypeResolution   @default(Cambiar_mismo_producto) @map("type_resolution")
   status          SaleReturnStatus @default(Pendiente)
   rejectionReason String?          @map("rejection_reason") @db.VarChar(255)
   requestDate     DateTime         @default(now()) @map("request_date")
   resolutionDate  DateTime?        @map("resolution_date")
 
-  sale    Sale           @relation(fields: [saleId], references: [id])
-  variant ProductVariant @relation(fields: [variantId], references: [id])
-  user    User           @relation(fields: [userId], references: [identityDocument])
+  sale          Sale                 @relation(fields: [saleId], references: [id])
+  variant       ProductVariant       @relation(fields: [variantId], references: [id])
+  user          User                 @relation(fields: [userId], references: [identityDocument])
+  payments      Payment[]
+  exchangeItems SaleReturnExchange[]
 
   @@map("sale_returns")
+}
+
+model SaleReturnExchange {
+  id           Int     @id @default(autoincrement())
+  saleReturnId String  @map("sale_return_id") @db.Uuid
+  variantId    Int     @map("variant_id")
+  quantity     Int
+  unitPrice    Decimal @map("unit_price") @db.Decimal(12, 2)
+
+  saleReturn SaleReturn     @relation(fields: [saleReturnId], references: [id], onDelete: Cascade)
+  variant    ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@unique([saleReturnId, variantId])
+  @@map("sale_return_exchanges")
 }
 
 // ============================================================================
@@ -448,9 +498,10 @@ model CashRegister {
   details        String  @db.VarChar(20)
   status         Boolean @default(true)
 
-  purchases Purchase[]
-  payments  Payment[]
-  expenses  Expense[]
+  purchases        Purchase[]
+  payments         Payment[]
+  expenses         Expense[]
+  purchasePayments PurchasePayment[]
 
   @@map("cash_registers")
 }
