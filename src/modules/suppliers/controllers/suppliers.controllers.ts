@@ -179,15 +179,15 @@ export const updateSupplier: RequestHandler<
                 document: idSupplier
             },
             data: supplierInfo
-        })
+        });
 
         return res.status(200).json({
             message: "Proveedor actualizado exitosamente"
-        })
+        });
     } catch (error) {
         next(error);
     };
-}
+};
 
 export const deleteSupplier: RequestHandler<
     { idSupplier: string },
@@ -205,7 +205,7 @@ export const deleteSupplier: RequestHandler<
         if (!supplier) {
             return res.status(404).json({
                 message: "Proveedor no encontrado"
-            })
+            });
         }
         await prisma.supplier.update({
             where: {
@@ -218,10 +218,10 @@ export const deleteSupplier: RequestHandler<
 
         return res.status(200).json({
             message: "Proveedor eliminado exitosamente"
-        })
+        });
     } catch (error) {
         next(error);
     }
-}
+};
 
 

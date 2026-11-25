@@ -88,7 +88,7 @@ export const getExpenses: RequestHandler<
             if (!expenses) {
                 return res.status(404).json({
                     message: "No se ha encontrado el gasto"
-                })
+                });
             }
             return res.status(200).json({
                 message: "Gasto encontrado",
@@ -112,7 +112,7 @@ export const getExpenses: RequestHandler<
         return res.status(200).json({
             message: "Gastos obtenidos exitosamente",
             Expenses: expenses
-        })
+        });
 
     } catch (error) {
         next(error);
