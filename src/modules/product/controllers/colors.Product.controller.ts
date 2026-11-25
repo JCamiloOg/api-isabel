@@ -130,12 +130,12 @@ export const getColorById: RequestHandler<{ id: string }> = async (req, res, nex
 };
 
 export const createColor: RequestHandler<
-    {},
+    object,
     unknown,
     CreateColorDTO
 > = async (req, res, next) => {
     try {
-        const rawColor = req.body.color ?? (req.body as any).name;
+        const rawColor = req.body.color ?? (req.body as { name?: unknown }).name;
         const rawHex = req.body.hex;
 
         if (!rawColor || typeof rawColor !== "string" || !rawColor.trim()) {
@@ -224,7 +224,7 @@ export const updateColor: RequestHandler<
             });
         }
 
-        const rawColor = req.body.color ?? (req.body as any).name;
+        const rawColor = req.body.color ?? (req.body as { name?: unknown }).name;
         const rawHex = req.body.hex;
         const updateData: { name?: string; hex?: string } = {};
 

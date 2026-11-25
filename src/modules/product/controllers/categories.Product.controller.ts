@@ -122,7 +122,7 @@ export const getCategoryById: RequestHandler<{ id: string }> = async (req, res, 
 };
 
 export const createCategory: RequestHandler<
-    {},
+    object,
     unknown,
     CreateProductCategoryDTO
 > = async (req, res, next) => {
