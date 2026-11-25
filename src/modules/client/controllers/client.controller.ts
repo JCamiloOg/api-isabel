@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { RequestHandler } from "express";
 import { prisma } from "../../../config/prisma.js";
 
@@ -9,6 +10,7 @@ export interface CreateClientDTO {
     email: string;
     phone: string;
     address?: string;
+    password?: string;
     status?: boolean;
 }
 
@@ -153,6 +155,24 @@ export const getClientById: RequestHandler<{ identityDocument: string }> = async
             return totalAcc + (total > 0 ? total : subtotal);
         }, 0);
 
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+        const lastMonthSalesTotal = client.salesAsCustomer.reduce((totalAcc, sale) => {
+            if (sale.status === "Cancelada" || sale.saleDate < oneMonthAgo) return totalAcc;
+
+            const subtotal = sale.saleDetails.reduce((detailAcc, item) => {
+                return detailAcc + Number(item.unitPrice) * item.quantity;
+            }, 0);
+
+            const discountRate = Number(sale.discount) || 0;
+            const vatRate = Number(sale.vat) || 0;
+            const discounted = subtotal * (1 - discountRate / 100);
+            const total = discounted * (1 + vatRate / 100);
+
+            return totalAcc + (total > 0 ? total : subtotal);
+        }, 0);
+
         return res.status(200).json({
             message: "Cliente obtenido exitosamente",
             client: {
@@ -165,9 +185,11 @@ export const getClientById: RequestHandler<{ identityDocument: string }> = async
                 phone: client.phone,
                 address: client.address ?? "",
                 status: client.status,
+                createdAt: client.createdAt,
                 metrics: {
                     totalOrders,
                     purchaseVolume,
+                    lastMonthSalesTotal,
                     lastPurchaseDate
                 }
             }
@@ -178,7 +200,7 @@ export const getClientById: RequestHandler<{ identityDocument: string }> = async
 };
 
 export const createClient: RequestHandler<
-    {},
+    object,
     unknown,
     CreateClientDTO
 > = async (req, res, next) => {
@@ -191,6 +213,7 @@ export const createClient: RequestHandler<
             email,
             phone,
             address,
+            password,
             status = true
         } = req.body;
 
@@ -226,6 +249,8 @@ export const createClient: RequestHandler<
             }
         });
 
+        const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+
         const newClient = await prisma.user.create({
             data: {
                 identityDocument,
@@ -235,6 +260,7 @@ export const createClient: RequestHandler<
                 email,
                 phone,
                 address: address ?? null,
+                password: hashedPassword,
                 status: status !== undefined ? Boolean(status) : true,
                 roleId: clientRole?.id ?? 3
             },

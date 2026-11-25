@@ -152,7 +152,7 @@ export const getSizeById: RequestHandler<{ id: string }> = async (req, res, next
 };
 
 export const createSize: RequestHandler<
-    {},
+    object,
     unknown,
     CreateSizeDTO
 > = async (req, res, next) => {

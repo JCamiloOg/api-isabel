@@ -114,7 +114,7 @@ export const getShoeTypeById: RequestHandler<{ id: string }> = async (req, res, 
 };
 
 export const createShoeType: RequestHandler<
-    {},
+    unknown,
     unknown,
     CreateShoeTypeDTO
 > = async (req, res, next) => {
@@ -134,15 +134,6 @@ export const createShoeType: RequestHandler<
                 message: "El nombre del tipo de zapato no puede superar los 100 caracteres."
             });
         }
-
-        const existingShoeType = await prisma.shoeType.findFirst({
-            where: {
-                name: {
-                    equals: trimmedName,
-                    mode: "insensitive"
-                }
-            }
-        });
 
         const newShoeType = await prisma.shoeType.create({
             data: {
@@ -200,19 +191,6 @@ export const updateShoeType: RequestHandler<
             return res.status(400).json({
                 message: "El nombre del tipo de zapato no puede superar los 100 caracteres."
             });
-        }
-
-        if (trimmedName.toLowerCase() !== existingShoeType.name.toLowerCase()) {
-            const nameTaken = await prisma.shoeType.findFirst({
-                where: {
-                    name: {
-                        equals: trimmedName,
-                        mode: "insensitive"
-                    },
-                    NOT: { id }
-                }
-            });
-
         }
 
         const updatedShoeType = await prisma.shoeType.update({

@@ -11,13 +11,13 @@ export interface UpdateBrandDTO {
     status?: string | boolean;
 }
 
-const normalizeStatus = (status: string | boolean | undefined): string => {
-    if (status === undefined || status === null) return "Active";
-    if (typeof status === "boolean") return status ? "Active" : "Inactive";
+const normalizeStatus = (status: string | boolean | undefined): boolean => {
+    if (status === undefined || status === null) return true;
+    if (typeof status === "boolean") return status;
     const lower = status.trim().toLowerCase();
-    if (lower === "activo" || lower === "active" || lower === "true") return "Active";
-    if (lower === "inactivo" || lower === "inactive" || lower === "false") return "Inactive";
-    return status;
+    if (lower === "activo" || lower === "active" || lower === "true") return true;
+    if (lower === "inactivo" || lower === "inactive" || lower === "false") return false;
+    return Boolean(status);
 };
 
 export const getBrands: RequestHandler = async (req, res, next) => {
@@ -26,7 +26,7 @@ export const getBrands: RequestHandler = async (req, res, next) => {
 
         const whereClause: {
             name?: { contains: string; mode: "insensitive" };
-            status?: string;
+            status?: boolean;
         } = {};
 
         if (typeof search === "string" && search.trim()) {
@@ -62,7 +62,6 @@ export const getBrands: RequestHandler = async (req, res, next) => {
             id: brand.id,
             name: brand.name,
             status: brand.status,
-            isActive: brand.status === "Active" || brand.status === "Activo",
             productsCount: brand._count.products
         }));
 
@@ -124,7 +123,6 @@ export const getBrandById: RequestHandler<{ id: string }> = async (req, res, nex
                 id: brand.id,
                 name: brand.name,
                 status: brand.status,
-                isActive: brand.status === "Active" || brand.status === "Activo",
                 productsCount: brand._count.products
             }
         });
@@ -134,7 +132,7 @@ export const getBrandById: RequestHandler<{ id: string }> = async (req, res, nex
 };
 
 export const createBrand: RequestHandler<
-    {},
+    unknown,
     unknown,
     CreateBrandDTO
 > = async (req, res, next) => {
@@ -182,8 +180,7 @@ export const createBrand: RequestHandler<
             brand: {
                 id: newBrand.id,
                 name: newBrand.name,
-                status: newBrand.status,
-                isActive: newBrand.status === "Active" || newBrand.status === "Activo"
+                status: newBrand.status
             }
         });
     } catch (error) {
@@ -216,7 +213,7 @@ export const updateBrand: RequestHandler<
         }
 
         const { name, status } = req.body;
-        const updateData: { name?: string; status?: string } = {};
+        const updateData: { name?: string; status?: boolean } = {};
 
         if (name !== undefined) {
             if (typeof name !== "string" || !name.trim()) {
@@ -268,8 +265,7 @@ export const updateBrand: RequestHandler<
             brand: {
                 id: updatedBrand.id,
                 name: updatedBrand.name,
-                status: updatedBrand.status,
-                isActive: updatedBrand.status === "Active" || updatedBrand.status === "Activo"
+                status: updatedBrand.status
             }
         });
     } catch (error) {
@@ -297,8 +293,7 @@ export const updateBrandStatus: RequestHandler<{ id: string }> = async (req, res
             });
         }
 
-        const isCurrentlyActive = existingBrand.status === "Active" || existingBrand.status === "Activo";
-        const newStatus = isCurrentlyActive ? "Inactive" : "Active";
+        const newStatus = !existingBrand.status;
 
         const updatedBrand = await prisma.brand.update({
             where: { id },
@@ -310,8 +305,7 @@ export const updateBrandStatus: RequestHandler<{ id: string }> = async (req, res
             brand: {
                 id: updatedBrand.id,
                 name: updatedBrand.name,
-                status: updatedBrand.status,
-                isActive: updatedBrand.status === "Active" || updatedBrand.status === "Activo"
+                status: updatedBrand.status
             }
         });
     } catch (error) {
