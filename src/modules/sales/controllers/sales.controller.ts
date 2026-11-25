@@ -5,6 +5,7 @@ import {
   Prisma,
   Sale,
   SaleDetail,
+  SaleStatus,
 } from "@prisma/client";
 import { RequestHandler } from "express";
 import { prisma } from "../../../config/prisma.js";
@@ -327,7 +328,7 @@ export const createSale: RequestHandler<
   {
     saleInfo: Omit<Sale, "id" | "saleDate" | "status"> & {
       saleDate?: string | Date;
-      status?: string;
+      status?: SaleStatus;
     };
     saleDetails: Omit<SaleDetail, "id" | "saleId">[];
     initialPayment?: Omit<Payment, "id" | "saleId" | "paymentDate">;
@@ -408,7 +409,7 @@ export const createSale: RequestHandler<
           vat: saleInfo.vat ?? 0,
           status:
             saleInfo.status ??
-            (saleInfo.isCredit ? "Pendiente" : "Completada"),
+            (saleInfo.isCredit ? "Pendiente" : "Entregada"),
         },
       });
 
@@ -473,7 +474,7 @@ export const createSale: RequestHandler<
 export const updateSaleStatus: RequestHandler<
   { idSale: string },
   { message: string },
-  { status: "Pendiente" | "Completada" | "Cancelada" | "En Proceso" }
+  { status: SaleStatus }
 > = async (req, res, next) => {
   try {
     const { idSale } = req.params;
@@ -608,7 +609,7 @@ export const addSalePayment: RequestHandler<
       if (totalPaid + Number(payment.amount) >= totalSale - 0.01) {
         await tx.sale.update({
           where: { id: idSale },
-          data: { status: "Completada" },
+          data: { status: SaleStatus.Entregada },
         });
       }
     });
@@ -676,11 +677,11 @@ export const getProductsForSale: RequestHandler<
         salePrice: true,
         gender: true,
         brand: true,
+        image: true,
         productColors: {
           where: { status: "Active" },
           select: {
             id: true,
-            image: true,
             colorImages: true,
             color: true,
             productVariants: {
@@ -699,7 +700,7 @@ export const getProductsForSale: RequestHandler<
         },
       },
       where: {
-        status: "Active",
+        status: true,
         OR: [
           { name: { contains: search, mode: "insensitive" } },
           { sku: { contains: search, mode: "insensitive" } },
