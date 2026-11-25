@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import { prisma } from "../../../config/prisma.js";
-import { Prisma } from "@prisma/client";
+import { Prisma, SaleStatus } from "@prisma/client";
 import { getTotalSale } from "../../../utils/sumItems.js";
 
 
@@ -146,7 +146,7 @@ export const getOrders: RequestHandler<
 export const updateStatusOrder: RequestHandler<
     { idOrder: string; },
     { message: string },
-    { status: string; }
+    { status: SaleStatus; }
 > = async (req, res, next) => {
     try {
         const { idOrder } = req.params;

@@ -1,4 +1,4 @@
-import { CashRegister, Prisma, Purchase, PurchaseDetail } from "@prisma/client";
+import { CashRegister, Prisma, Purchase, PurchaseDetail, PurchasePayment, PurchasesStatus } from "@prisma/client";
 import { RequestHandler } from "express";
 import { prisma } from "../../../config/prisma.js";
 
@@ -7,12 +7,16 @@ type GetShoppingByID = Prisma.PurchaseGetPayload<
     {
         select: {
             id: true,
-            cashRegister: true,
             supplier: true,
             status: true,
             deliveryDate: true,
             orderDate: true,
             vat: true,
+            purchasePayments: {
+                include: {
+                    cashRegister: true,
+                }
+            },
             purchaseDetails: {
                 select: {
                     unitPrice: true,
@@ -47,7 +51,6 @@ type GetShopping = Prisma.PurchaseGetPayload<
     {
         select: {
             id: true,
-            cashRegister: true,
             supplier: true,
             status: true,
             deliveryDate: true,
@@ -71,12 +74,16 @@ export const getShoppings: RequestHandler<
             const shopping = await prisma.purchase.findUnique({
                 select: {
                     id: true,
-                    cashRegister: true,
                     supplier: true,
                     status: true,
                     deliveryDate: true,
                     vat: true,
                     orderDate: true,
+                    purchasePayments: {
+                        include: {
+                            cashRegister: true,
+                        }
+                    },
                     purchaseDetails: {
                         select: {
                             id: true,
@@ -105,7 +112,6 @@ export const getShoppings: RequestHandler<
                         }
                     }
                 },
-
                 where: { id: idShopping }
             });
 
@@ -117,7 +123,6 @@ export const getShoppings: RequestHandler<
         const shoppings = await prisma.purchase.findMany({
             select: {
                 id: true,
-                cashRegister: true,
                 supplier: true,
                 status: true,
                 deliveryDate: true,
@@ -151,30 +156,44 @@ export const getShoppings: RequestHandler<
 export const createShopping: RequestHandler<
     unknown,
     { message: string },
-    { purchaseInfo: Omit<Purchase, 'status' | 'deliveryDate'>, purchaseDetails: Omit<PurchaseDetail, 'id' | "purchaseId">[] }
+    {
+        purchaseInfo: Omit<Purchase, 'status' | 'deliveryDate'>,
+        purchaseDetails: Omit<PurchaseDetail, 'id' | "purchaseId">[]
+        purchasePayments: Omit<PurchasePayment, "id" | "purchaseId" | "userId">[]
+
+    }
 > = async (req, res, next) => {
     try {
-        const { purchaseInfo, purchaseDetails } = req.body;
+        const { purchaseInfo, purchaseDetails, purchasePayments } = req.body;
 
 
         if (purchaseDetails.length === 0 || !purchaseInfo) return res.status(400).json({
             message: "Campos por llenar"
         });
 
-        const existShoppingId = await prisma.purchase.findUnique({
-            where: { id: purchaseInfo.id },
-        });
+        if (purchaseInfo.id.trim()) {
+            const existShoppingId = await prisma.purchase.findUnique({
+                where: { id: purchaseInfo.id },
+            });
 
-        if (existShoppingId) return res.status(400).json({
-            message: "El # de la factura ya existe. Ingresa otro o modifica la compra existente."
-        });
-
+            if (existShoppingId) return res.status(400).json({
+                message: "El # de la factura ya existe. Ingresa otro o modifica la compra existente."
+            });
+        }
         await prisma.$transaction(async (tx) => {
             const insertedPurchase = await tx.purchase.create({
                 data: {
                     ...purchaseInfo,
+                    id: purchaseInfo?.id?.trim() || undefined,
                     orderDate: new Date(purchaseInfo.orderDate)
                 }
+            });
+
+            await tx.purchasePayment.createMany({
+                data: purchasePayments.map((p) => ({
+                    ...p,
+                    purchaseId: insertedPurchase.id,
+                }))
             });
 
             await tx.purchaseDetail.createMany({
@@ -224,7 +243,7 @@ export const updateShoppingInfo: RequestHandler<
 export const updatePurchaseStatus: RequestHandler<
     { idShopping: string },
     { message: string },
-    { status: 'Pendiente' | 'Recibido' | 'Cancelado' }
+    { status: PurchasesStatus }
 
 > = async (req, res, next) => {
     try {
@@ -252,6 +271,65 @@ export const updatePurchaseStatus: RequestHandler<
             message: "Compra actualizada exitosamente!"
         });
 
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+export const changePaymentsInfo: RequestHandler<
+    { idShopping: string; },
+    { message: string; },
+    { purchasePayments: (Omit<PurchasePayment, "id" | "purchaseId" | "userId"> & { id?: number })[] }
+
+> = async (req, res, next) => {
+    try {
+        const { idShopping } = req.params;
+        const { purchasePayments } = req.body;
+
+        for (const payment of purchasePayments) {
+            console.log(payment);
+            if (payment.id) {
+                await prisma.purchasePayment.update({
+                    data: payment,
+                    where: { id: payment.id }
+                });
+
+                continue;
+            }
+
+            await prisma.purchasePayment.create({
+                data: {
+                    ...payment,
+                    purchaseId: idShopping
+                }
+            });
+        }
+
+        return res.status(200).json({
+            message: "Pagos actualizados correctamente"
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+export const deletePaymentInfo: RequestHandler<{
+    id: number;
+}> = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        console.log(id);
+
+
+        await prisma.purchasePayment.delete({
+            where: { id: Number(id) }
+        });
+
+        res.status(200).json({
+            message: "Pago eliminado correctamente."
+        });
     } catch (error) {
         next(error);
     }

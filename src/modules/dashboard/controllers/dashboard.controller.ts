@@ -1,11 +1,11 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, PurchasesStatus, SaleStatus } from "@prisma/client";
 import { RequestHandler } from "express";
 import { prisma } from "../../../config/prisma.js";
 
 
-const SALE_COMPLETED = "Completada";
-const PURCHASE_PENDING = "Pendiente";
-const PRODUCT_ACTIVE = "Activo";
+const SALE_COMPLETED = SaleStatus.Entregada;
+const PURCHASE_PENDING = PurchasesStatus.Pendiente;
+const PRODUCT_ACTIVE = true;
 
 const MES_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
 const PERIODOS = ["dia", "mes", "anio"] as const;

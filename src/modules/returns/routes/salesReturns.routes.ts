@@ -12,7 +12,7 @@ router.get("/sales", getSales);
 
 
 router.put("/:idSaleReturn", resolveSaleReturn);
-router.get("/:idSaleReturn", getSalesReturns);
+router.get("/:idSale", getSalesReturns);
 
 
 export default router;

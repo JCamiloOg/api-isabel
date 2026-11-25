@@ -93,14 +93,13 @@ model User {
   status           Boolean  @default(true)
   createdAt        DateTime @default(now()) @map("created_at")
 
-  documentType     DocumentType      @relation(fields: [documentTypeId], references: [id])
-  role             Role?             @relation(fields: [roleId], references: [id])
-  salesAsCustomer  Sale[]            @relation("CustomerSales")
-  salesAsSeller    Sale[]            @relation("SellerSales")
-  payments         Payment[]
-  saleReturns      SaleReturn[]
-  expenses         Expense[]
-  purchasePayments PurchasePayment[]
+  documentType    DocumentType @relation(fields: [documentTypeId], references: [id])
+  role            Role?        @relation(fields: [roleId], references: [id])
+  salesAsCustomer Sale[]       @relation("CustomerSales")
+  salesAsSeller   Sale[]       @relation("SellerSales")
+  payments        Payment[]
+  saleReturns     SaleReturn[]
+  expenses        Expense[]
 
   @@map("users")
 }
@@ -288,18 +287,18 @@ enum PurchasesStatus {
 }
 
 model Purchase {
-  id             String          @id @default(uuid()) @db.Uuid
-  cashRegisterId Int             @map("cash_register_id")
-  supplierId     String          @map("supplier_id") @db.VarChar(20)
-  orderDate      DateTime        @default(now()) @map("order_date")
-  status         PurchasesStatus @default(Pendiente)
-  deliveryDate   DateTime?       @map("delivery_date")
-  vat            Decimal         @default(0.00) @db.Decimal(5, 2)
+  id           String          @id @default(uuid()) @db.Uuid
+  supplierId   String          @map("supplier_id") @db.VarChar(20)
+  orderDate    DateTime        @default(now()) @map("order_date")
+  status       PurchasesStatus @default(Pendiente)
+  deliveryDate DateTime?       @map("delivery_date")
+  vat          Decimal         @default(0.00) @db.Decimal(5, 2)
 
   supplier         Supplier          @relation(fields: [supplierId], references: [document])
   purchaseDetails  PurchaseDetail[]
   purchasePayments PurchasePayment[]
-  cashRegister     CashRegister      @relation(fields: [cashRegisterId], references: [id])
+  cashRegister     CashRegister?     @relation(fields: [cashRegisterId], references: [id])
+  cashRegisterId   Int?
 
   @@map("purchases")
 }
@@ -321,20 +320,14 @@ model PurchaseDetail {
 
 /// Pagos o abonos realizados a proveedores desde una o varias cajas
 model PurchasePayment {
-  id              Int      @id @default(autoincrement())
-  purchaseId      String   @map("purchase_id") @db.Uuid
-  cashRegisterId  Int      @map("cash_register_id")
-  userId          String   @map("user_id") @db.VarChar(20)
-  paymentMethodId Int      @map("payment_method_id")
-  amount          Decimal  @db.Decimal(14, 2)
-  receipt         String?  @db.VarChar(255)
-  paymentDate     DateTime @default(now()) @map("payment_date")
-  notes           String?  @db.VarChar(255)
+  id             Int     @id @default(autoincrement())
+  purchaseId     String  @map("purchase_id") @db.Uuid
+  cashRegisterId Int     @map("cash_register_id")
+  amount         Decimal @db.Decimal(14, 2)
+  receipt        String? @db.VarChar(255)
 
-  purchase      Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  cashRegister  CashRegister  @relation(fields: [cashRegisterId], references: [id])
-  user          User          @relation(fields: [userId], references: [identityDocument])
-  paymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  purchase     Purchase     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id])
 
   @@map("purchase_payments")
 }
@@ -391,8 +384,7 @@ model PaymentMethod {
   id     Int    @id @default(autoincrement())
   method String @db.VarChar(20)
 
-  payments         Payment[]
-  purchasePayments PurchasePayment[]
+  payments Payment[]
 
   @@map("payment_methods")
 }
