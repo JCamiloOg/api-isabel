@@ -126,7 +126,6 @@ export const createExpenses: RequestHandler<
         concept: string,
         amount: number,
         date: string,
-        userId: string,
         cashRegisterId: number
     }
 
@@ -139,7 +138,6 @@ export const createExpenses: RequestHandler<
             !expenseInfo.concept ||
             !expenseInfo.amount ||
             !expenseInfo.date ||
-            !expenseInfo.userId ||
             !expenseInfo.cashRegisterId
 
         ) {
@@ -151,6 +149,7 @@ export const createExpenses: RequestHandler<
         await prisma.expense.create({
             data: {
                 ...expenseInfo,
+                userId: "1017100001",
                 date: new Date(expenseInfo.date)
             }
         });
