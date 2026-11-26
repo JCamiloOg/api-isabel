@@ -110,6 +110,18 @@ export const deleteSupplierCategory: RequestHandler<
             });
         }
 
+        const isRelation = await prisma.supplierCategoryAssignment.findMany({
+            where: {
+                supplierCategoryId: id
+            }
+        });
+
+        if (isRelation.length > 0) {
+            return res.status(400).json({
+                message: "No se puede eliminar la categoría porque tiene proveedores asociados."
+            });
+        }
+
         await prisma.supplierCategory.delete({
             where: { id }
         });
