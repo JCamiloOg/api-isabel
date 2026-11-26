@@ -12,6 +12,8 @@ import {
   getProductoMasVendido,
   getProductosMenosVendidos,
   getVentasVsGastos,
+  getResumen,
+  getKpis,
 } from "../controllers/dashboard.controller.js";
 
 const router = Router();
@@ -37,6 +39,8 @@ router.get("/ventas-vs-gastos", getVentasVsGastos);        // ?mes=YYYY-MM
 router.get("/productos-menos-stock", getProductosMenosStock);
 router.get("/productos-mas-stock", getProductosMasStock);
 
+router.get("/kpis", getKpis);
+router.get("/resumen", getResumen);
 export default router;
 
 // En tu app.ts / server.ts:
