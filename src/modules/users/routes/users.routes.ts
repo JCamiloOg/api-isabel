@@ -12,10 +12,10 @@ const router = Router();
 router.get("/", getUsers);
 router.post("/", createUser);
 
-router.patch("/status/:idUser", updateUserStatus);
+router.patch("/status/:identityDocument", updateUserStatus);
 
-router.get("/:idUser", getUsers);
-router.put("/:idUser", updateUserInfo);
-router.delete("/:idUser", deleteUser);
+router.get("/:identityDocument", getUsers);
+router.put("/:identityDocument", updateUserInfo);
+router.delete("/:identityDocument", deleteUser);
 
 export default router;

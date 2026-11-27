@@ -50,7 +50,6 @@ type GetSaleByID = Prisma.SaleGetPayload<{
             size: true;
             productColor: {
               select: {
-                image: true;
                 colorImages: true;
                 color: true;
                 product: {
@@ -59,6 +58,7 @@ type GetSaleByID = Prisma.SaleGetPayload<{
                     sku: true;
                     name: true;
                     gender: true;
+                    image: true;
                   };
                 };
               };
@@ -189,7 +189,6 @@ export const getSales: RequestHandler<
                   size: true,
                   productColor: {
                     select: {
-                      image: true,
                       colorImages: true,
                       color: true,
                       product: {
@@ -198,6 +197,7 @@ export const getSales: RequestHandler<
                           sku: true,
                           name: true,
                           gender: true,
+                          image: true,
                         },
                       },
                     },
