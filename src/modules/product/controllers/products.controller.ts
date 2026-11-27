@@ -204,11 +204,19 @@ export const updateProduct: RequestHandler<
             salePrice,
             gender,
             isPublic,
-            status
+            status,
+            colors
         } = req.body;
 
         const existingProduct = await prisma.product.findUnique({
-            where: { id }
+            where: { id },
+            include: {
+                productColors: {
+                    include: {
+                        productVariants: true
+                    }
+                }
+            }
         });
 
         if (!existingProduct) {
@@ -217,20 +225,138 @@ export const updateProduct: RequestHandler<
             });
         }
 
-        const product = await prisma.product.update({
-            where: { id },
-            data: {
-                ...(name !== undefined && { name }),
-                ...(sku !== undefined && { sku }),
-                ...(brandId !== undefined && { brandId: Number(brandId) }),
-                ...(productCategoryId !== undefined && { productCategoryId: Number(productCategoryId) }),
-                ...(shoeTypeId !== undefined && { shoeTypeId: Number(shoeTypeId) }),
-                ...(purchasePrice !== undefined && { purchasePrice }),
-                ...(salePrice !== undefined && { salePrice }),
-                ...(gender !== undefined && { gender }),
-                ...(isPublic !== undefined && { isPublic }),
-                ...(status !== undefined && { status: Boolean(status) })
+        const product = await prisma.$transaction(async (tx) => {
+            const updatedProduct = await tx.product.update({
+                where: { id },
+                data: {
+                    ...(name !== undefined && { name }),
+                    ...(sku !== undefined && { sku }),
+                    ...(brandId !== undefined && { brandId: Number(brandId) }),
+                    ...(productCategoryId !== undefined && { productCategoryId: Number(productCategoryId) }),
+                    ...(shoeTypeId !== undefined && { shoeTypeId: Number(shoeTypeId) }),
+                    ...(purchasePrice !== undefined && { purchasePrice }),
+                    ...(salePrice !== undefined && { salePrice }),
+                    ...(gender !== undefined && { gender }),
+                    ...(isPublic !== undefined && { isPublic }),
+                    ...(status !== undefined && { status: Boolean(status) })
+                }
+            });
+
+            if (colors !== undefined) {
+                const incomingColorIds = colors.map((c) => Number(c.colorId));
+                const colorsToDelete = existingProduct.productColors.filter(
+                    (pc) => !incomingColorIds.includes(pc.colorId)
+                );
+
+                if (colorsToDelete.length > 0) {
+                    await tx.productColor.deleteMany({
+                        where: {
+                            id: { in: colorsToDelete.map((pc) => pc.id) }
+                        }
+                    });
+                }
+
+                for (const col of colors) {
+                    const colorId = Number(col.colorId);
+                    const existingColor = existingProduct.productColors.find(
+                        (pc) => pc.colorId === colorId
+                    );
+
+                    if (existingColor) {
+                        await tx.productColor.update({
+                            where: { id: existingColor.id },
+                            data: {
+                                status: col.status === false ? "Inactive" : "Active"
+                            }
+                        });
+
+                        if (col.colorImages !== undefined) {
+                            await tx.colorImage.deleteMany({
+                                where: { productColorId: existingColor.id }
+                            });
+
+                            if (col.colorImages.length > 0) {
+                                await tx.colorImage.createMany({
+                                    data: col.colorImages.map((imgUrl) => ({
+                                        productColorId: existingColor.id,
+                                        image: imgUrl
+                                    }))
+                                });
+                            }
+                        }
+
+                        if (col.sizes !== undefined) {
+                            const incomingSizeIds = col.sizes.map((s) => Number(s.sizeId));
+                            const variantsToDelete = existingColor.productVariants.filter(
+                                (pv) => !incomingSizeIds.includes(pv.sizeId)
+                            );
+
+                            if (variantsToDelete.length > 0) {
+                                await tx.productVariant.deleteMany({
+                                    where: {
+                                        id: { in: variantsToDelete.map((pv) => pv.id) }
+                                    }
+                                });
+                            }
+
+                            for (const sz of col.sizes) {
+                                const sizeId = Number(sz.sizeId);
+                                const existingVariant = existingColor.productVariants.find(
+                                    (pv) => pv.sizeId === sizeId
+                                );
+
+                                if (existingVariant) {
+                                    await tx.productVariant.update({
+                                        where: { id: existingVariant.id },
+                                        data: {
+                                            currentStock: Number(sz.currentStock) || 0,
+                                            discount: Number(sz.discount) || 0,
+                                            status: sz.status === false ? "Inactive" : "Active"
+                                        }
+                                    });
+                                } else {
+                                    await tx.productVariant.create({
+                                        data: {
+                                            productColorId: existingColor.id,
+                                            sizeId,
+                                            currentStock: Number(sz.currentStock) || 0,
+                                            discount: Number(sz.discount) || 0,
+                                            status: sz.status === false ? "Inactive" : "Active"
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    } else {
+                        await tx.productColor.create({
+                            data: {
+                                productId: id,
+                                colorId,
+                                status: col.status === false ? "Inactive" : "Active",
+                                colorImages: col.colorImages?.length
+                                    ? {
+                                        create: col.colorImages.map((imgUrl) => ({
+                                            image: imgUrl
+                                        }))
+                                    }
+                                    : undefined,
+                                productVariants: col.sizes?.length
+                                    ? {
+                                        create: col.sizes.map((sz) => ({
+                                            sizeId: Number(sz.sizeId),
+                                            currentStock: Number(sz.currentStock) || 0,
+                                            discount: Number(sz.discount) || 0,
+                                            status: sz.status === false ? "Inactive" : "Active"
+                                        }))
+                                    }
+                                    : undefined
+                            }
+                        });
+                    }
+                }
             }
+
+            return updatedProduct;
         });
 
         return res.status(200).json({
